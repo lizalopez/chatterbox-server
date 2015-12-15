@@ -11,10 +11,6 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
-var posts = [];
-var id = 9002;
-
-var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -29,69 +25,57 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
+
+
+var posts = [];
+
+var requestHandler = function(request, response) {
   require("fs");
 
-  //as an array
-
-  var postTemplate = {results : {
-    username: '',
-    text: '',
-    roomname: '',
-    objectId: ''
-  }};
+  // var postTemplate = {results : {username: '',text: '',roomname: '', objectId: ''}};
   // fs.readFile()
   // fs.write
   // The outgoing status.
   var statusCode = 200;
-
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
   var pathnameURL = require("url").parse(request.url, "URL").pathname
   // Tell the client we are sending them plain text.
-  //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
   headers['Content-Type'] = "JSON";
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
 
   console.log("Serving request type " + request.method + " for url " + request.url);
-  if(request.method === "GET"){
-    
+  if(request.method === "GET"){   
     if ( pathnameURL !== "/classes/messages") {
       statusCode = 404;
-      // console.log(statusCode)
-      // response.end(JSON.stringify({"statusCode" : statusCode}));
+    }else{
+      response.writeHead(statusCode, headers); 
+      response.write(JSON.stringify({"results" : posts}));
     }
-    // console.log(statusCode)
-    // response.end(JSON.stringify({"results": posts, "statusCode" : statusCode}));
-            //post too maybe or something
-  } else if(request.method === "OPTIONS"){
 
-    // response.end(JSON.stringify({"statusCode" : statusCode}))
+  } else if(request.method === "OPTIONS"){
+    response.writeHead(statusCode, headers); 
+
   } else if(request.method === "POST"){
     statusCode = 201;
     request.on("data", function(chunk) {
       var d = JSON.parse(chunk.toString());
       posts.push(d)
     })
-  } 
-  if(statusCode === 200 || statusCode === 201){
-    response.end(JSON.stringify({"results" : posts, "statusCode" : statusCode}));
-  }else{
-    response.end(JSON.stringify({"statusCode" : statusCode}))
+      response.writeHead(statusCode, headers); 
+      response.write(JSON.stringify({"results" : posts}));
   }
-  // Make sure to always call response.end() - Node may not send
-  // anything back to the client until you do. The string you pass to
-  // response.end() will be the body of the response - i.e. what shows
-  // up in the browser.
-  //
-  // response.end(JSON.stringify(posts))
-  // Calling .end "flushes" the response's internal buffer, forcing
-  // node to actually send all the data over to the client.
-  // response.end("ended");
+
+  // if(statusCode === 200 || statusCode === 201){
+  //   response.end();
+  // }else{
+  //   response.end()
+  // }
+  response.end()
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
