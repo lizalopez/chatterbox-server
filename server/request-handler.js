@@ -50,8 +50,9 @@ var requestHandler = function(request, response) {
 
   console.log("Serving request type " + request.method + " for url " + request.url);
   if(request.method === "GET"){   
-    if ( pathnameURL !== "/classes/messages") {
+    if ( pathnameURL !== "/classes/messages" && pathnameURL !== "/classes/room") {
       statusCode = 404;
+      response.writeHead(statusCode, headers); 
     }else{
       response.writeHead(statusCode, headers); 
       response.write(JSON.stringify({"results" : posts}));
@@ -64,17 +65,15 @@ var requestHandler = function(request, response) {
     statusCode = 201;
     request.on("data", function(chunk) {
       var d = JSON.parse(chunk.toString());
+      if(d.objectId === undefined){
+        d.objectId = Math.floor(Math.random() * 90019001)
+      }
       posts.push(d)
     })
       response.writeHead(statusCode, headers); 
       response.write(JSON.stringify({"results" : posts}));
   }
 
-  // if(statusCode === 200 || statusCode === 201){
-  //   response.end();
-  // }else{
-  //   response.end()
-  // }
   response.end()
 };
 
