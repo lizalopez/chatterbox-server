@@ -27,8 +27,20 @@ var requestHandler = function(request, response) {
   // Adding more logging to your server can be an easy way to get passive
   // debugging help, but you should always be careful about leaving stray
   // console.logs in your code.
-  console.log("Serving request type " + request.method + " for url " + request.url);
+  require("fs");
 
+  //as an array
+  var id = 0;
+  var posts = [{username: 'anon',text: 'trololo',roomname: 'lobby',objectId: "9001"}];
+
+  var postTemplate = {results : {
+    username: '',
+    text: '',
+    roomname: '',
+    objectId: ''
+  }};
+  // fs.readFile()
+  // fs.write
   // The outgoing status.
   var statusCode = 200;
 
@@ -39,20 +51,44 @@ var requestHandler = function(request, response) {
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = "text/plain";
+  headers['Content-Type'] = "JSON";
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
   response.writeHead(statusCode, headers);
 
+  console.log("Serving request type " + request.method + " for url " + request.url);
+  if(request.method === "GET"){
+    response.end(JSON.stringify({"results": posts}))
+            //post too maybe or something
+  } else if(request.method === "POST" ||request.method === "OPTIONS"){
+    request.on("data", function(chunk) {
+      var d = JSON.parse(chunk.toString());
+      console.log(d, "data")
+      d.roomname = "HR36"
+      d.objectId = id;    
+      var post = {}
+      for (var k in d) {
+        console.log('iterating over data:', d[k])
+      }
+      console.log(d["username"], "data-changed")      
+      posts.push(d)
+      console.log(posts)
+      id++
+    })
+
+     // console.log(posts)
+    response.end(JSON.stringify({"results" : posts}));
+  } 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
   // response.end() will be the body of the response - i.e. what shows
   // up in the browser.
   //
+  // response.end(JSON.stringify(posts))
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end("Hello, World!");
+  // response.end("ended");
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -70,4 +106,6 @@ var defaultCorsHeaders = {
   "access-control-allow-headers": "content-type, accept",
   "access-control-max-age": 10 // Seconds.
 };
+
+exports.requestHandler = requestHandler;
 
