@@ -19,11 +19,11 @@
 /////////////////////////////////////////////////////////////////////////////
 // Backbone-based Implementation of (minimal) chatterbox client
 /////////////////////////////////////////////////////////////////////////////
-
+var id = 1;
 var Message = Backbone.Model.extend({
-  url: 'http://127.0.0.1:3000/',
+  url: 'http://127.0.0.1:3000/classes/',
   defaults: {
-    username: '',
+    username: 'user',
     text: ''
   }
 });
@@ -31,7 +31,7 @@ var Message = Backbone.Model.extend({
 var Messages = Backbone.Collection.extend({
 
   model: Message,
-  url: 'http://127.0.0.1:3000/',
+  url: 'http://127.0.0.1:3000/classes/messages',
 
   loadMsgs: function() {
     this.fetch({data: { order: '-createdAt' }});
@@ -39,7 +39,6 @@ var Messages = Backbone.Collection.extend({
 
   parse: function(response, options) {
     var results = [];
-    console.log(response)
     for (var i = response.results.length-1; i >= 0; i--) {
       results.push(response.results[i]);
     }
@@ -65,9 +64,11 @@ var FormView = Backbone.View.extend({
 
     var $text = this.$('#message');
     this.collection.create({
+      objectId:id,
       username: window.location.search.substr(10),
       text: $text.val()
     });
+    id++
     $text.val('');
   },
 
