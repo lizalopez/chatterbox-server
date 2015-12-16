@@ -29,6 +29,43 @@ this file and include it in basic-server.js so that it actually works.
 
 var posts = [];
 
+var headers = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "access-control-allow-headers": "content-type, accept",
+  "access-control-max-age": 10 // Seconds.
+};
+
+var responseWriter = function(response, statusCode, results){
+  results = results || "";
+  response.writeHead(statusCode, headers);
+  response.write(JSON.stringify({"results" : results}));
+  response.end();
+};
+
+var requestTypeHash = {
+  "GET" : function(response, statusCode){
+    statusCode = statusCode || 200;
+    responseWriter(response, statusCode, posts);
+  },
+  "OPTIONS" : function(response, statusCode){
+    statusCode = statusCode || 200;
+    responseWriter(response, statusCode);
+  },
+  "POST" : function(request, response){
+    var statusCode = 201;
+    var data = "";
+    request.on("data", function(chunk) {
+      data += chunk.toString();
+    });
+    data = JSON.parse(data);
+    if(data.objectId === undefined){
+      data.objectId = Math.floor(Math.random() * 90019001);
+    }
+    posts.push(data);
+  }
+};
+
 var requestHandler = function(request, response) {
   require("fs");
 
@@ -38,24 +75,22 @@ var requestHandler = function(request, response) {
   // The outgoing status.
   var statusCode = 200;
   // See the note below about CORS headers.
-  var headers = defaultCorsHeaders;
-  var pathnameURL = require("url").parse(request.url, "URL").pathname
+  var pathnameURL = require("url").parse(request.url, "URL").pathname;
   // Tell the client we are sending them plain text.
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = "JSON";
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
 
   console.log("Serving request type " + request.method + " for url " + request.url);
   if(request.method === "GET"){   
-    if ( pathnameURL !== "/classes/messages" && pathnameURL !== "/classes/room") {
+    if ( pathnameURL === "/classes/messages" || pathnameURL === "/classes/room1") {
+      response.writeHead(statusCode, headers); 
+      response.write(JSON.stringify({"results" : posts})); 
+    }else{
       statusCode = 404;
       response.writeHead(statusCode, headers); 
-    }else{
-      response.writeHead(statusCode, headers); 
-      response.write(JSON.stringify({"results" : posts}));
     }
 
   } else if(request.method === "OPTIONS"){
@@ -66,15 +101,15 @@ var requestHandler = function(request, response) {
     request.on("data", function(chunk) {
       var d = JSON.parse(chunk.toString());
       if(d.objectId === undefined){
-        d.objectId = Math.floor(Math.random() * 90019001)
+        d.objectId = Math.floor(Math.random() * 90019001);
       }
-      posts.push(d)
-    })
+      posts.push(d);
+    });
       response.writeHead(statusCode, headers); 
       response.write(JSON.stringify({"results" : posts}));
   }
 
-  response.end()
+  response.end();
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -86,12 +121,7 @@ var requestHandler = function(request, response) {
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "access-control-allow-headers": "content-type, accept",
-  "access-control-max-age": 10 // Seconds.
-};
+
 
 exports.requestHandler = requestHandler;
 
