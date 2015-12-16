@@ -44,11 +44,11 @@ var responseWriter = function(response, statusCode, results){
 };
 
 var requestTypeHash = {
-  "GET" : function(response, statusCode){
+  "GET" : function(request, response, statusCode){
     statusCode = statusCode || 200;
     responseWriter(response, statusCode, posts);
   },
-  "OPTIONS" : function(response, statusCode){
+  "OPTIONS" : function(request, response, statusCode){
     statusCode = statusCode || 200;
     responseWriter(response, statusCode);
   },
@@ -58,23 +58,22 @@ var requestTypeHash = {
     request.on("data", function(chunk) {
       data += chunk.toString();
     });
-    data = JSON.parse(data);
-    if(data.objectId === undefined){
-      data.objectId = Math.floor(Math.random() * 90019001);
-    }
-    posts.push(data);
+    request.on("end", function(){
+      data = JSON.parse(data);
+      if(data.objectId === undefined){
+        data.objectId = Math.floor(Math.random() * 90019001);
+      }
+      posts.push(data);
+      responseWriter(response, statusCode, posts);
+    });
   }
 };
 
 var requestHandler = function(request, response) {
-  require("fs");
-
-  // var postTemplate = {results : {username: '',text: '',roomname: '', objectId: ''}};
+  // require("fs");
   // fs.readFile()
   // fs.write
-  // The outgoing status.
   var statusCode = 200;
-  // See the note below about CORS headers.
   var pathnameURL = require("url").parse(request.url, "URL").pathname;
   // Tell the client we are sending them plain text.
   // You will need to change this if you are sending something
@@ -84,32 +83,10 @@ var requestHandler = function(request, response) {
   // which includes the status and all headers.
 
   console.log("Serving request type " + request.method + " for url " + request.url);
-  if(request.method === "GET"){   
-    if ( pathnameURL === "/classes/messages" || pathnameURL === "/classes/room1") {
-      response.writeHead(statusCode, headers); 
-      response.write(JSON.stringify({"results" : posts})); 
-    }else{
-      statusCode = 404;
-      response.writeHead(statusCode, headers); 
-    }
 
-  } else if(request.method === "OPTIONS"){
-    response.writeHead(statusCode, headers); 
+  var responseCall = requestTypeHash[request.method];
+  responseCall(request, response, statusCode);
 
-  } else if(request.method === "POST"){
-    statusCode = 201;
-    request.on("data", function(chunk) {
-      var d = JSON.parse(chunk.toString());
-      if(d.objectId === undefined){
-        d.objectId = Math.floor(Math.random() * 90019001);
-      }
-      posts.push(d);
-    });
-      response.writeHead(statusCode, headers); 
-      response.write(JSON.stringify({"results" : posts}));
-  }
-
-  response.end();
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
